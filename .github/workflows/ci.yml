@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: "false"  # Disable caching from setup-node
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -51,7 +51,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: false # only build & test image, no pushing
+          push: false  # Only build & test image, no pushing
           tags: express-ts-api:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
