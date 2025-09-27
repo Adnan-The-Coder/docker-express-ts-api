@@ -37,8 +37,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render Deploy
+        id: deploy
         run: |
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+          DEPLOY_RESPONSE=$(curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
             -H "Accept: application/json" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -d '{}'
+            -d '{}')
+
+          echo "$DEPLOY_RESPONSE"
+          DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id')
+          echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
+
+      - name: Stream Render Logs
+        run: |
+          echo "🔄 Streaming logs for Deploy ID: $DEPLOY_ID"
+          OFFSET=0
+          while true; do
+            LOGS=$(curl -s "https://api.render.com/v1/deploys/$DEPLOY_ID/logs?offset=$OFFSET" \
+              -H "Accept: application/json" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
+
+            NEW_LOGS=$(echo "$LOGS" | jq -r '.logs')
+            NEXT_OFFSET=$(echo "$LOGS" | jq -r '.nextOffset')
+
+            if [ "$NEW_LOGS" != "null" ] && [ -n "$NEW_LOGS" ]; then
+              echo "$NEW_LOGS"
+            fi
+
+            OFFSET=$NEXT_OFFSET
+
+            STATUS=$(curl -s "https://api.render.com/v1/deploys/$DEPLOY_ID" \
+              -H "Accept: application/json" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" | jq -r '.status')
+
+            if [ "$STATUS" = "live" ]; then
+              echo "✅ Deploy succeeded!"
+              break
+            elif [ "$STATUS" = "failed" ]; then
+              echo "❌ Deploy failed!"
+              exit 1
+            fi
+
+            sleep 10
+          done

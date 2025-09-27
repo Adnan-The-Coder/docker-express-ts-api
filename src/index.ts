@@ -12,7 +12,7 @@ app.get("/message", (req: Request, res: Response) => {
 });
 
 app.get("/health", (req: Request, res: Response) => {
-  console.log("health check worked !");
+  console.log("health check worked and this is logs in github CD pipeline coming or not ? lets see!");
   res.json({ status: "OK" });
 });
 
