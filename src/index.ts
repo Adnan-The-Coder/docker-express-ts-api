@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Routes
 app.get("/message", (req: Request, res: Response) => {
-  res.json({ message: "Hello from API working on render deployed automated just now!" });
+  res.json({ message: "Hello from API working on render and this is logs in github CD pipeline coming or not ? lets see!" });
 });
 
 app.get("/health", (req: Request, res: Response) => {
